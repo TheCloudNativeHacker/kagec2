@@ -114,7 +114,7 @@ func (i *thisImplant) runTask(t models.Task) (models.Result, error) {
 		f, err := os.Create("test.txt")
 		r := models.Result{}
 		r.AgentId = i.Id
-		r.TaskID = t.Id
+		r.TaskId = t.Id
 		if err != nil {
 			r.Contents = "Could not create file"
 			return r, errors.New("Could not create file")
