@@ -1,0 +1,4 @@
+name: Go Analysis
+on: [push]
+- name: Golang Vulncheck
+  uses: Templum/govulncheck-action@v1.0.0
