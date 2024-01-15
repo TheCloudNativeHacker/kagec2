@@ -12,3 +12,4 @@ jobs:
           vulncheck-version: latest
           package: ./...
           fail-on-vuln: true
+          skip-upload: true
