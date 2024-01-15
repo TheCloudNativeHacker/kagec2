@@ -13,8 +13,9 @@ import (
 )
 
 var (
-	taskJSON   = `{"type":"ping", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
-	resultJSON = `{"contents":"asdf", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
+	taskJSON        = `{"type":"ping", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
+	resultJSON      = `{"contents":"asdf", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
+	taskHistoryJSON = `{"task":{"id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","type":"ping"},"options":["option1","option2"],"results":{"id":"22222222-2222-2222-2222-222222222222","task_id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","contents":"pong"}}`
 )
 
 // will need to add test for a task id being put into the request
@@ -89,5 +90,50 @@ func TestAddResult(t *testing.T) {
 	}
 	if respResult.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
 		t.Errorf("Expected agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respResult.AgentId)
+	}
+}
+
+func TestAddTaskHistory(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/taskhistory", strings.NewReader(taskHistoryJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	err := AddTaskHistory(c)
+	if err != nil {
+		t.Errorf("Expected error to be nil got %v", err)
+	}
+	if c.Response().Status != 200 {
+		t.Errorf("Expected 200 response got %v", c.Response().Status)
+	}
+
+	respHistory := models.TaskHistory{}
+	err = json.Unmarshal([]byte(rec.Body.String()), &respHistory)
+	if err != nil {
+		t.Errorf("Unexpected error unmarshalling response: %v", err)
+	}
+	if strings.Join(respHistory.Options, ",") != "option1,option2" {
+		t.Errorf("Unexpected options, expected option1,option2 got: %v", strings.Join(respHistory.Options, ","))
+	}
+	if respHistory.TaskObject.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
+		t.Errorf("Expected task agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respHistory.TaskObject.AgentId.String())
+	}
+	if respHistory.TaskObject.Id.String() != "11111111-1111-1111-1111-111111111111" {
+		t.Errorf("Expected  task UUID to be 11111111-1111-1111-1111-111111111111 got: %v instead", respHistory.TaskObject.Id.String())
+	}
+	if respHistory.TaskObject.Type != "ping" {
+		t.Errorf("Expected Task Type to be ping, got %v", respHistory.TaskObject.Type)
+	}
+	if respHistory.TaskResult.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
+		t.Errorf("Expected result agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respHistory.TaskResult.AgentId.String())
+	}
+	if respHistory.TaskResult.Id.String() != "22222222-2222-2222-2222-222222222222" {
+		t.Errorf("Expected result task UUID to be 22222222-2222-2222-2222-222222222222 got: %v instead", respHistory.TaskResult.Id.String())
+	}
+	if respHistory.TaskResult.TaskId.String() != "11111111-1111-1111-1111-111111111111" {
+		t.Errorf("Expected result task UUID to be 11111111-1111-1111-1111-111111111111 got: %v instead", respHistory.TaskResult.TaskId.String())
+	}
+	if respHistory.TaskResult.Contents != "pong" {
+		t.Errorf("Expected Task Result Contents to be pong, got %v", respHistory.TaskObject.Type)
 	}
 }

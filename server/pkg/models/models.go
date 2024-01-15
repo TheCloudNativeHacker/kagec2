@@ -14,15 +14,15 @@ type Task struct {
 
 type Result struct {
 	Id       uuid.UUID `param:"id" json:"id" query:"id" db:"id"`
-	TaskID   uuid.UUID `param:"task_id" json:"task_id" query:"task_id" db:"task_id"`
+	TaskId   uuid.UUID `param:"task_id" json:"task_id" query:"task_id" db:"task_id"`
 	AgentId  uuid.UUID `param:"agent_id" json:"agent_id" query:"agent_id" db:"agent_id"`
 	Contents string    `json:"contents" db:"contents"`
 }
 
 type TaskHistory struct {
-	TaskObject Task     `json:"task_object"`
-	Options    []string `json:"task_options"`
-	TaskResult Result   `json:"task_results"`
+	TaskObject Task     `json:"task"`
+	Options    []string `json:"options"`
+	TaskResult Result   `json:"results"`
 }
 
 // type Agent struct {
