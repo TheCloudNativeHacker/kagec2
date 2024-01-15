@@ -1,4 +1,14 @@
 name: Go Analysis
-on: [push]
-- name: Golang Vulncheck
-  uses: Templum/govulncheck-action@v1.0.0
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Scan for Vulnerabilities in Code
+        uses: Templum/govulncheck-action@<version>
+        with:
+          go-version: 1.21.x
+          vulncheck-version: latest
+          package: ./...
+          fail-on-vuln: true
