@@ -54,7 +54,7 @@ func (t *taskStore) Save(ts *[]models.Task) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(t.file, tasks, 0644)
+	err = os.WriteFile(t.file, tasks, 0600)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (r *resultStore) Save(rs *[]models.Result) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(r.file, tasks, 0644)
+	err = os.WriteFile(r.file, tasks, 0600)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func (t *taskHistoryStore) Save(ts *[]models.TaskHistory) error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(t.file, taskHistory, 0644)
+	err = os.WriteFile(t.file, taskHistory, 0600)
 	if err != nil {
 		return err
 	}
