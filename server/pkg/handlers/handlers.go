@@ -31,6 +31,7 @@ func init() {
 		log.Println("Could not load results")
 	}
 }
+
 func RootHandler(c echo.Context) error {
 	return c.Render(http.StatusOK, "home.page.tmpl", map[string]interface{}{})
 }
@@ -96,13 +97,14 @@ func GetTask(c echo.Context) error {
 
 // need to make sure to enforce certain IDs to be included
 func AddTask(c echo.Context) error {
-	//need to do additional request validation
+	//need to do additional request validation, need to validate there is an agent id and that it is for a valid agent
 	lock.Lock()
 	defer lock.Unlock()
 	defer taskStore.Save(&tasks)
 	task := new(models.Task)
-	err := c.Bind(&task)
+	err := c.Bind(task)
 	if err != nil {
+		log.Println(err)
 		return c.String(http.StatusBadRequest, "bad request")
 	}
 	i, err := uuid.NewRandom()
@@ -158,7 +160,7 @@ func AddResult(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
 	defer resultStore.Save(&results)
-	//need to do additional request validation
+	//need to do additional request validation need to make sure result matches with a task id
 	result := new(models.Result)
 	err := c.Bind(&result)
 	if err != nil {
@@ -171,6 +173,7 @@ func AddResult(c echo.Context) error {
 	result.Id = i
 	log.Println(result)
 	results = append(results, *result)
+	//need to delete the task create a taskhistory object and add that
 	return c.JSON(http.StatusOK, result)
 }
 

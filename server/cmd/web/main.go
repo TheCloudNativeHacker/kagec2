@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/labstack/echo/v4"
 	_ "github.com/labstack/echo/v4/middleware"
-	"github.com/thecloudnativehacker/kagec2/server/pkg/render.go"
+	"github.com/thecloudnativehacker/kagec2/server/pkg/render"
 )
 
 const port = ":1323"

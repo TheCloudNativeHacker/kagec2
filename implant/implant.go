@@ -105,20 +105,25 @@ func (i *thisImplant) ServiceTasks() error {
 
 func (i *thisImplant) runTask(t models.Task) (models.Result, error) {
 	log.Printf("Running task %v", t)
-	if t.Type != "create_file" {
+
+	switch t.Type {
+	case "create_file":
+		f, err := os.Create("test.txt")
+		r := models.Result{}
+		r.AgentId = i.Id
+		r.TaskID = t.Id
+		if err != nil {
+			r.Contents = "Could not create file"
+			return r, errors.New("Could not create file")
+		}
+		defer f.Close()
+		r.Contents = "File created successfully."
+		return r, nil
+
+	default:
 		return models.Result{}, errors.New("No such task type found. " + t.Type)
 	}
-	f, err := os.Create("test.txt")
-	r := models.Result{}
-	r.AgentId = i.Id
-	r.TaskID = t.Id
-	if err != nil {
-		r.Contents = "Could not create file"
-		return r, errors.New("Could not create file")
-	}
-	defer f.Close()
-	r.Contents = "File created successfully."
-	return r, nil
+
 }
 
 func (i *thisImplant) SendResults() error {
