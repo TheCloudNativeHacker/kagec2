@@ -1,7 +1,7 @@
 name: Go Analysis
 on: [push, pull_request]
 jobs:
-  build:
+  dependency-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -13,3 +13,14 @@ jobs:
           package: ./...
           fail-on-vuln: true
           skip-upload: true
+  sast:
+    runs-on: ubuntu-latest
+    env:
+      GO111MODULE: on
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@master
+        with:
+          args: ./...    
