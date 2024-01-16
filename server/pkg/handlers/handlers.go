@@ -171,7 +171,6 @@ func AddResult(c echo.Context) error {
 		log.Fatal("Got error: ", err)
 	}
 	result.Id = i
-	log.Println(result)
 	results = append(results, *result)
 	//need to delete the task create a taskhistory object and add that
 	return c.JSON(http.StatusOK, result)

