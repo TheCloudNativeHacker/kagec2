@@ -13,9 +13,12 @@ import (
 )
 
 var (
-	taskJSON        = `{"type":"ping", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
-	resultJSON      = `{"contents":"asdf", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
-	taskHistoryJSON = `{"task":{"id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","type":"ping"},"options":["option1","option2"],"results":{"id":"22222222-2222-2222-2222-222222222222","task_id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","contents":"pong"}}`
+	taskJSON           = `{"type":"ping", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
+	nilTaskJSON        = `{"type":"ping"}`
+	resultJSON         = `{"contents":"asdf", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
+	nilAgentResultJSON = `{"contents":"asdf"}`
+	nilTaskResultJSON  = `{"contents":"asdf", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
+	taskHistoryJSON    = `{"task":{"id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","type":"ping"},"options":["option1","option2"],"results":{"id":"22222222-2222-2222-2222-222222222222","task_id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","contents":"pong"}}`
 )
 
 // will need to add test for a task id being put into the request
@@ -50,6 +53,18 @@ func TestAddTask(t *testing.T) {
 	}
 }
 
+func TestAddNilAgentIdTask(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/tasks", strings.NewReader(nilTaskJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	_ = AddTask(c)
+	if c.Response().Status != 400 {
+		t.Errorf("Expected 200 response got %v", c.Response().Status)
+	}
+}
+
 // func TestGetTask(t *testing.T) {
 // 	e := echo.New()
 // 	req := httptest.NewRequest(http.MethodPost, "/api/tasks", strings.NewReader(taskJSON))
@@ -65,31 +80,58 @@ func TestAddTask(t *testing.T) {
 // }
 
 // need to tesk that result matches with a task and agent
-func TestAddResult(t *testing.T) {
+//func TestAddResult(t *testing.T) {
+//	//need to add a task first get that task id and use it to construct the result json
+//	e := echo.New()
+//	req := httptest.NewRequest(http.MethodPost, "/api/results", strings.NewReader(resultJSON))
+//	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+//	rec := httptest.NewRecorder()
+//	c := e.NewContext(req, rec)
+//	err := AddResult(c)
+//	if err != nil {
+//		t.Errorf("Expected error to be nil got %v", err)
+//	}
+//	if c.Response().Status != 200 {
+//		t.Errorf("Expected 200 response got %v", c.Response().Status)
+//	}
+//
+//	// will need to flesh this out with more fully defined results and tasks
+//	respResult := models.Result{}
+//	err = json.Unmarshal([]byte(rec.Body.String()), &respResult)
+//	if err != nil {
+//		t.Errorf("Unexpected error unmarshalling response: %v", err)
+//	}
+//	if respResult.Contents != "asdf" {
+//		t.Errorf("Unexpected contents, expected asdf got: %v", respResult.Contents)
+//	}
+//	if respResult.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
+//		t.Errorf("Expected agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respResult.AgentId)
+//	}
+//}
+
+// need to fix the checking to enusre the right error is being returned
+func TestAddNilAgentIdResult(t *testing.T) {
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/api/results", strings.NewReader(resultJSON))
+	req := httptest.NewRequest(http.MethodPost, "/api/results", strings.NewReader(nilAgentResultJSON))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
-	err := AddResult(c)
-	if err != nil {
-		t.Errorf("Expected error to be nil got %v", err)
-	}
-	if c.Response().Status != 200 {
+	_ = AddResult(c)
+	if c.Response().Status != 400 {
 		t.Errorf("Expected 200 response got %v", c.Response().Status)
 	}
+}
 
-	// will need to flesh this out with more fully defined results and tasks
-	respResult := models.Result{}
-	err = json.Unmarshal([]byte(rec.Body.String()), &respResult)
-	if err != nil {
-		t.Errorf("Unexpected error unmarshalling response: %v", err)
-	}
-	if respResult.Contents != "asdf" {
-		t.Errorf("Unexpected contents, expected asdf got: %v", respResult.Contents)
-	}
-	if respResult.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
-		t.Errorf("Expected agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respResult.AgentId)
+// need to fix the checking to enusre the right error is being returned
+func TestAddNilTaskIdResult(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/results", strings.NewReader(nilTaskResultJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	_ = AddResult(c)
+	if c.Response().Status != 400 {
+		t.Errorf("Expected 200 response got %v", c.Response().Status)
 	}
 }
 

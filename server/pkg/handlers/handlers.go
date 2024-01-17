@@ -59,6 +59,9 @@ func GetTasks(c echo.Context) error {
 					filteredTasks = append(filteredTasks, tasks[i])
 				}
 			}
+			if len(filteredTasks) == 0 {
+				return c.JSON(http.StatusNotFound, filteredTasks)
+			}
 			return c.JSON(http.StatusOK, filteredTasks)
 		}
 		return c.JSON(http.StatusOK, tasks)
@@ -78,7 +81,6 @@ func GetTasks(c echo.Context) error {
 }
 
 func GetTask(c echo.Context) error {
-	// id := uuid.MustParse(c.QueryParam("id"))
 	lock.Lock()
 	defer lock.Unlock()
 	defer taskStore.Save(&tasks)
@@ -97,7 +99,6 @@ func GetTask(c echo.Context) error {
 
 // need to make sure to enforce certain IDs to be included
 func AddTask(c echo.Context) error {
-	//need to do additional request validation, need to validate there is an agent id and that it is for a valid agent
 	lock.Lock()
 	defer lock.Unlock()
 	defer taskStore.Save(&tasks)
@@ -106,6 +107,10 @@ func AddTask(c echo.Context) error {
 	if err != nil {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, "bad request")
+	}
+	//need to do additional request validation, need to validate there is a valid agent
+	if task.AgentId == uuid.Nil {
+		return c.String(http.StatusBadRequest, "Agent Id can't be Nil")
 	}
 	i, err := uuid.NewRandom()
 	if err != nil {
@@ -155,17 +160,22 @@ func GetResults(c echo.Context) error {
 	return c.String(http.StatusNotFound, "Result not found.")
 }
 
-// need to make sure to enforce certain IDs to be included
 func AddResult(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
 	defer resultStore.Save(&results)
-	//need to do additional request validation need to make sure result matches with a task id
 	result := new(models.Result)
 	err := c.Bind(&result)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "bad request")
 	}
+	if result.AgentId == uuid.Nil {
+		return c.String(http.StatusBadRequest, "Agent ID can't be nil")
+	}
+	if result.TaskId == uuid.Nil {
+		return c.String(http.StatusBadRequest, "Task ID can't be nil")
+	}
+	//need to check if task id is valid
 	i, err := uuid.NewRandom()
 	if err != nil {
 		log.Fatal("Got error: ", err)
