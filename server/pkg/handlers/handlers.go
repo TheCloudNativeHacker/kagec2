@@ -176,13 +176,23 @@ func AddResult(c echo.Context) error {
 		return c.String(http.StatusBadRequest, "Task ID can't be nil")
 	}
 	//need to check if task id is valid
-	i, err := uuid.NewRandom()
+	id, err := uuid.NewRandom()
 	if err != nil {
 		log.Fatal("Got error: ", err)
 	}
-	result.Id = i
+	result.Id = id
 	results = append(results, *result)
 	//need to delete the task create a taskhistory object and add that
+	taskH := models.TaskHistory{}
+	for i, task := range tasks {
+		if result.TaskId == task.Id {
+			taskH.TaskObject = task
+			taskH.TaskResult = *result
+			tasks = append(tasks[:i], tasks[i+1:]...)
+			taskHistory = append(taskHistory, taskH)
+			break
+		}
+	}
 	return c.JSON(http.StatusOK, result)
 }
 
