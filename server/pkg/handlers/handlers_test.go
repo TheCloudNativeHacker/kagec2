@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/thecloudnativehacker/kagec2/server/pkg/models"
 	_ "github.com/thecloudnativehacker/kagec2/server/pkg/models"
@@ -38,7 +39,7 @@ func TestAddTask(t *testing.T) {
 	}
 
 	respTask := models.Task{}
-	err = json.Unmarshal([]byte(rec.Body.String()), &respTask)
+	err = json.Unmarshal(rec.Body.Bytes(), &respTask)
 	if err != nil {
 		t.Errorf("Unexpected error unmarshalling response: %v", err)
 	}
@@ -80,34 +81,64 @@ func TestAddNilAgentIdTask(t *testing.T) {
 // }
 
 // need to tesk that result matches with a task and agent
-//func TestAddResult(t *testing.T) {
-//	//need to add a task first get that task id and use it to construct the result json
-//	e := echo.New()
-//	req := httptest.NewRequest(http.MethodPost, "/api/results", strings.NewReader(resultJSON))
-//	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-//	rec := httptest.NewRecorder()
-//	c := e.NewContext(req, rec)
-//	err := AddResult(c)
-//	if err != nil {
-//		t.Errorf("Expected error to be nil got %v", err)
-//	}
-//	if c.Response().Status != 200 {
-//		t.Errorf("Expected 200 response got %v", c.Response().Status)
-//	}
-//
-//	// will need to flesh this out with more fully defined results and tasks
-//	respResult := models.Result{}
-//	err = json.Unmarshal([]byte(rec.Body.String()), &respResult)
-//	if err != nil {
-//		t.Errorf("Unexpected error unmarshalling response: %v", err)
-//	}
-//	if respResult.Contents != "asdf" {
-//		t.Errorf("Unexpected contents, expected asdf got: %v", respResult.Contents)
-//	}
-//	if respResult.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
-//		t.Errorf("Expected agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respResult.AgentId)
-//	}
-//}
+func TestAddResult(t *testing.T) {
+	// need to add a task first get that task id and use it to construct the result json
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/tasks", strings.NewReader(taskJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	err := AddTask(c)
+	if err != nil {
+		t.Errorf("Expected error to be nil got %v", err)
+	}
+	if c.Response().Status != 200 {
+		t.Errorf("Expected 200 response got %v", c.Response().Status)
+	}
+	respTask := models.Task{}
+	err = json.Unmarshal(rec.Body.Bytes(), &respTask)
+	if err != nil {
+		t.Errorf("Unexpected error unmarshalling response: %v", err)
+	}
+
+	// need to get the task id here.
+	res := models.Result{}
+	res.TaskId = respTask.Id
+	res.AgentId = respTask.AgentId
+	res.Contents = "test contents"
+	res.Id, err = uuid.NewRandom()
+	if err != nil {
+		t.Errorf("Error generating uuid for result: %v", err)
+	}
+	mRes, err := json.Marshal(res)
+	if err != nil {
+		t.Errorf("Error Marshalling Response: %v", err)
+	}
+	req = httptest.NewRequest(http.MethodPost, "/api/results", strings.NewReader(string(mRes)))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec = httptest.NewRecorder()
+	c = e.NewContext(req, rec)
+	err = AddResult(c)
+	if err != nil {
+		t.Errorf("Expected error to be nil got %v", err)
+	}
+	if c.Response().Status != 200 {
+		t.Errorf("Expected 200 response got %v", c.Response().Status)
+	}
+
+	// will need to flesh this out with more fully defined results and tasks
+	respResult := models.Result{}
+	err = json.Unmarshal([]byte(rec.Body.String()), &respResult)
+	if err != nil {
+		t.Errorf("Unexpected error unmarshalling response: %v", err)
+	}
+	if respResult.Contents != "test contents" {
+		t.Errorf("Unexpected contents, expected test contents got: %v", respResult.Contents)
+	}
+	if respResult.AgentId.String() != "49c10782-cfe9-472a-9c86-d66d641e9ca4" {
+		t.Errorf("Expected agent UUID to be 49c10782-cfe9-472a-9c86-d66d641e9ca4 got: %v instead", respResult.AgentId)
+	}
+}
 
 // need to fix the checking to enusre the right error is being returned
 func TestAddNilAgentIdResult(t *testing.T) {
@@ -133,6 +164,10 @@ func TestAddNilTaskIdResult(t *testing.T) {
 	if c.Response().Status != 400 {
 		t.Errorf("Expected 200 response got %v", c.Response().Status)
 	}
+}
+
+// TODO need to implement check for valid agent first
+func TestAddBadAgentIdResult(t *testing.T) {
 }
 
 func TestAddTaskHistory(t *testing.T) {
