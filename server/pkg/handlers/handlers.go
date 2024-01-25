@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sync"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/thecloudnativehacker/kagec2/server/pkg/models"
@@ -15,10 +16,12 @@ var (
 	lock             = sync.Mutex{}
 	tasks            = []models.Task{}
 	results          = []models.Result{}
+	users            = []models.User{}
 	taskHistory      = []models.TaskHistory{}
 	taskStore        = stores.NewTaskStore()
 	resultStore      = stores.NewResultStore()
 	taskHistoryStore = stores.NewTaskHistoryStore()
+	userStore        = stores.NewUserStore()
 )
 
 func init() {
@@ -108,7 +111,7 @@ func AddTask(c echo.Context) error {
 		log.Println(err)
 		return c.String(http.StatusBadRequest, "bad request")
 	}
-	//need to do additional request validation, need to validate there is a valid agent
+	// need to do additional request validation, need to validate there is a valid agent
 	if task.AgentId == uuid.Nil {
 		return c.String(http.StatusBadRequest, "Agent Id can't be Nil")
 	}
@@ -175,14 +178,14 @@ func AddResult(c echo.Context) error {
 	if result.TaskId == uuid.Nil {
 		return c.String(http.StatusBadRequest, "Task ID can't be nil")
 	}
-	//need to check if task id is valid
+	// need to check if task id is valid
 	id, err := uuid.NewRandom()
 	if err != nil {
 		log.Fatal("Got error: ", err)
 	}
 	result.Id = id
 	results = append(results, *result)
-	//need to delete the task create a taskhistory object and add that
+	// need to delete the task create a taskhistory object and add that
 	taskH := models.TaskHistory{}
 	for i, task := range tasks {
 		if result.TaskId == task.Id {
@@ -208,7 +211,7 @@ func GetTaskHistory(c echo.Context) error {
 		log.Println("error: ", err)
 		return c.String(http.StatusBadRequest, "Incorrect Result ID format.")
 	}
-	//get task history for specific task id
+	// get task history for specific task id
 	for i := range taskHistory {
 		if taskHistory[i].TaskObject.Id == id {
 			log.Println(results[i])
@@ -239,13 +242,13 @@ func AddTaskHistory(c echo.Context) error {
 	lock.Lock()
 	defer lock.Unlock()
 	defer taskHistoryStore.Save(&taskHistory)
-	//need to do additional request validation
+	// need to do additional request validation
 	taskH := new(models.TaskHistory)
 	err := c.Bind(&taskH)
 	if err != nil {
 		return c.String(http.StatusBadRequest, "bad request")
 	}
-	//need to get the Task object and the Results object
+	// need to get the Task object and the Results object
 	log.Println(taskH)
 	taskHistory = append(taskHistory, *taskH)
 	return c.JSON(http.StatusOK, taskH)
@@ -259,3 +262,26 @@ func AddTaskHistory(c echo.Context) error {
 
 // func AddImplant(c echo.Context) error {
 // }
+//
+
+func AddUser(c echo.Context) error {
+	lock.Lock()
+	defer lock.Unlock()
+	defer userStore.Save(&users)
+	v := validator.New()
+	c.Echo().Validator = &models.UserValidator{Validator: v}
+	user := new(models.User)
+	err := c.Bind(&user)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "bad request")
+	}
+	err = c.Validate(user)
+	if err != nil {
+		return c.String(http.StatusBadRequest, "Could not validate request.")
+	}
+
+	log.Println(user)
+	users = append(users, *user)
+	retUser := models.User{Name: user.Name, Email: user.Email}
+	return c.JSON(http.StatusOK, retUser)
+}

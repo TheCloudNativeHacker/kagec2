@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/thecloudnativehacker/kagec2/server/pkg/models"
-	_ "github.com/thecloudnativehacker/kagec2/server/pkg/models"
 )
 
 var (
@@ -20,6 +19,8 @@ var (
 	nilAgentResultJSON = `{"contents":"asdf"}`
 	nilTaskResultJSON  = `{"contents":"asdf", "agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4"}`
 	taskHistoryJSON    = `{"task":{"id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","type":"ping"},"options":["option1","option2"],"results":{"id":"22222222-2222-2222-2222-222222222222","task_id":"11111111-1111-1111-1111-111111111111","agent_id":"49c10782-cfe9-472a-9c86-d66d641e9ca4","contents":"pong"}}`
+	userJSON           = `{"username":"test_user", "email":"test_user@protonmail.com", "password":"mypassword"}`
+	userNoEmailJSON    = `{"username":"test_user", "password":"mypassword"}`
 )
 
 // will need to add test for a task id being put into the request
@@ -213,4 +214,50 @@ func TestAddTaskHistory(t *testing.T) {
 	if respHistory.TaskResult.Contents != "pong" {
 		t.Errorf("Expected Task Result Contents to be pong, got %v", respHistory.TaskObject.Type)
 	}
+}
+
+func TestAddUser(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(userJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+	err := AddUser(c)
+	if err != nil {
+		t.Errorf("Expected error to be nil got %v", err)
+	}
+	if c.Response().Status != 200 {
+		t.Errorf("Expected 200 response got %v", c.Response().Status)
+	}
+	respUser := models.User{}
+	err = json.Unmarshal([]byte(rec.Body.String()), &respUser)
+	if err != nil {
+		t.Errorf("Unexpected error unmarshalling response: %v", err)
+	}
+	if respUser.Name != "test_user" {
+		t.Errorf("Expected Username: test_user got: %v", respUser.Name)
+	}
+	if respUser.Email != "test_user@protonmail.com" {
+		t.Errorf("Expected Email: test_user@protonmail.com got: %v", respUser.Email)
+	}
+}
+
+// should fail
+func TestAddUserWithoutName(t *testing.T) {
+}
+
+// should pass
+func TestAddUserWithoutEmail(t *testing.T) {
+}
+
+// should fail
+func TestAddUserWithoutPass(t *testing.T) {
+}
+
+// should fail
+func TestAddUserWithShortPass(t *testing.T) {
+}
+
+// should fail
+func TestAddUserWithLongPass(t *testing.T) {
 }
