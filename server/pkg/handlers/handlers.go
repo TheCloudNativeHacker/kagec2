@@ -279,9 +279,13 @@ func AddUser(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusBadRequest, "Could not validate request.")
 	}
-
+	id, err := uuid.NewRandom()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, "Error creating user")
+	}
+	user.Id = id
 	log.Println(user)
 	users = append(users, *user)
-	retUser := models.User{Name: user.Name, Email: user.Email}
+	retUser := models.User{Id: user.Id, Name: user.Name, Email: user.Email}
 	return c.JSON(http.StatusOK, retUser)
 }

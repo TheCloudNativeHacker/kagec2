@@ -16,7 +16,7 @@ type (
 		Save(rs *[]models.Result) error
 		Load(rs *[]models.Result) error
 	}
-	//agents and taskhistory not fleshed out yet
+	// agents and taskhistory not fleshed out yet
 	TaskHistoryStore interface {
 		Save(th *[]models.TaskHistory) error
 		Load(th *[]models.TaskHistory) error
@@ -24,6 +24,11 @@ type (
 	AgentStore interface {
 		Save(a *[]models.Implant) error
 		Load(a *[]models.Implant) error
+	}
+
+	UserStore interface {
+		Save(a *[]models.User) error
+		Load(a *[]models.User) error
 	}
 
 	taskStore struct {
@@ -39,6 +44,11 @@ type (
 	taskHistoryStore struct {
 		file  string
 		tasks *[]models.TaskHistory
+	}
+
+	userStore struct {
+		file  string
+		users *[]models.User
 	}
 )
 
@@ -134,4 +144,33 @@ func (t *taskHistoryStore) Load(ts *[]models.TaskHistory) error {
 func NewTaskHistoryStore() TaskHistoryStore {
 	t := taskHistoryStore{file: taskHistoryFile}
 	return &t
+}
+
+func (u *userStore) Save(us *[]models.User) error {
+	users, err := json.Marshal(us)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(u.file, users, 0600)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *userStore) Load(us *[]models.User) error {
+	content, err := os.ReadFile(u.file)
+	if err != nil {
+		return err
+	}
+	err = json.Unmarshal(content, us)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func NewUserStore() UserStore {
+	u := userStore{file: taskHistoryFile}
+	return &u
 }
